@@ -1,0 +1,212 @@
+<?
+include("inc/header.inc.php");
+if($action=="oben")	{
+	$query=mysql_query("SELECT nr,sort,typ FROM $buchhaltung"."_Konto WHERE nebenkonto=0 AND typ='1' OR typ='2' ORDER BY sort ASC");
+	while(list($nr,$sort,$typ)=mysql_fetch_row($query)) {
+		$var="id$nr";
+		if($$var) {
+			$query2=mysql_query("SELECT sort FROM $buchhaltung"."_Konto WHERE nebenkonto = 0 AND sort < '$sort' AND typ='$typ' ORDER BY sort DESC LIMIT 0,1");
+			list($changeid)=mysql_fetch_row($query2);
+			$query2=mysql_query("UPDATE $buchhaltung"."_Konto SET sort='0' WHERE sort='$changeid'");
+			$query2=mysql_query("UPDATE $buchhaltung"."_Konto SET sort='$changeid' WHERE sort='$sort'");
+			$query2=mysql_query("UPDATE $buchhaltung"."_Konto SET sort='$sort' WHERE sort='0'");
+		}
+	}
+} else if($action=="unten") { 
+  $query=mysql_query("SELECT nr,sort,typ FROM $buchhaltung"."_Konto WHERE nebenkonto=0 AND typ='1' OR typ='2' ORDER BY sort DESC");
+  while(list($nr,$sort,$typ)=mysql_fetch_row($query)) { 
+    $var="id$nr";
+    if($$var) { 
+      $query2=mysql_query("SELECT sort FROM $buchhaltung"."_Konto WHERE nebenkonto=0 AND sort > '$sort' AND typ='$typ' ORDER BY sort ASC LIMIT 0,1");
+      list($changeid)=mysql_fetch_row($query2);
+      $query2=mysql_query("UPDATE $buchhaltung"."_Konto SET sort='0' WHERE sort='$changeid'");
+      $query2=mysql_query("UPDATE $buchhaltung"."_Konto SET sort='$changeid' WHERE sort='$sort'");
+      $query2=mysql_query("UPDATE $buchhaltung"."_Konto SET sort='$sort' WHERE sort='0'");
+    }
+	}
+}
+?>
+<html>
+<head>
+  <title><?=$_config_title ?></title>
+  <link rel="stylesheet" href="main.css" type=text/css>
+  <script language="JavaScript" type="text/javascript" src="inc/functions.js"></script>
+	<script language="javascript" type="text/javascript">
+	<!--
+		var fenKonto;
+		function konto(konto){
+			window.open('buchungssaetze.php?kontonr='+konto,'test','width=985,height=100,left=30,top=600,resizable=yes,scrollbars=yes');
+			window.open('konto.php?kontonr='+konto,'konto'+konto,'width=950,height=500,left=10,top=10,resizable=yes,scrollbars=yes');
+		}
+		function namens(){
+			if(document.getElementById('namenskonto').value=="erstellen"){
+				window.open('namenskonto_erstellen.php','namenskonto_erstellen','width=300,height=200,left=10,top=10,resizable=yes,scrollbars=yes');
+			} else {
+				window.open('namenskonto_loeschen.php','namenskonto_loeschen','width=300,height=200,left=10,top=10,resizable=yes,scrollbars=yes');
+			}
+		}
+    function nebenkonto(konto){
+      window.open('nebenkonto.php?kontonr='+konto,'nebenkonto'+konto,'width=950,height=500,left=10,top=10,resizable=yes,scrollbars=yes');
+    }
+
+	//-->
+	</script>
+</head>
+<body<? if($msg) print " onLoad=\"javascript:alert('".str_replace("\n","\\n",urldecode($msg))."');\""; ?>>
+<table border=0 width="100%">
+<tr>
+	<td style="font-size:14px;"><b>Bilanz</b>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="erfolgsrechnung.php">Erfolgsrechnung</a></td>
+	<td align=right><?=$buchhaltung?></td>
+</tr>
+</table>	
+<br><br>
+<?
+	$totalHaben=0;
+	$totalSoll=0;
+?>
+<form method=post action="<?=$PHP_SELF?>">
+<table border=0 width=900 cellpadding=0 cellspacing=0 align=center>
+<tr>
+	<td colspan=3 width=900 height=2 bgcolor="#000000"></td>
+</tr>
+	<td width=449 valign=top style="padding: 10px 10px 0px 0px;">
+		<table border=0 width="100%">
+		<?
+                                                                                                                                                    
+    //Nebenkonten
+		$query=mysql_query("SELECT ne.id,ne.name,sum(bu.betrag*bu.kurs) FROM $buchhaltung"."_Nebenkonto ne LEFT JOIN $buchhaltung"."_Konto ko ON ne.id = ko.nebenkonto LEFT JOIN $buchhaltung"."_Buchungssaetze bu ON (bu.kt_soll = ko.nr) WHERE ne.typ=1 ".getDateDelimiter("bu.datum","AND","") ." GROUP BY ne.id");
+		while(list($nr,$name,$betrag)=mysql_fetch_row($query)) {
+			$query2=mysql_query("SELECT ne.id,ne.name,sum(bu.betrag*bu.kurs) FROM $buchhaltung"."_Nebenkonto ne LEFT JOIN $buchhaltung"."_Konto ko ON ne.id = ko.nebenkonto LEFT JOIN $buchhaltung"."_Buchungssaetze bu ON (bu.kt_haben = ko.nr) WHERE ne.typ=1 AND ne.id = '$nr' GROUP BY ne.id");
+			$betrag-=@mysql_result($query2,0,2);
+			print "<tr>
+				<td colspan=3 valign=top align=left width=\"*\"><a href=\"javascript:nebenkonto($nr);\">$name</a></td>
+				<td align=right valign=top width=100>".formatPreis($betrag)."</td>
+			</tr>";
+			$totalSoll+=$betrag;
+		}
+
+		//Buchungssätze
+		$query=mysql_query("SELECT nr,name,waehrung FROM $buchhaltung"."_Konto WHERE typ=1 AND (nebenkonto is NULL OR nebenkonto <1) ORDER BY sort");
+    while(list($konto,$name,$waehrung)=mysql_fetch_row($query)) {
+			$betrag=getSollBetrag($konto);
+			//Namenskonto
+			$query2=mysql_query("SELECT id,name FROM $buchhaltung"."_Namenskonto WHERE position='$konto'");
+			if(mysql_num_rows($query2)>0){
+				list($namenskonto_id,$namenskonto_name)=mysql_fetch_row($query2);
+				print "<tr>
+					<td colspan=4 style=\"font-weight:bold;\">$namenskonto_name</td>
+				</tr>\n";
+				$namenskonto=NULL;
+			}
+			$totalSoll+=$betrag;
+
+      print "<tr>
+				<td width=20 valign=top><input type=checkbox name=\"id$konto\" value=1></td>
+        <td valign=top colspan=2><a href=\"javascript:konto('$konto');\">".getKontoFormat($name,$konto)."</a></td>
+				<td align=right valign=top width=100>".formatPreis($betrag)."</td>
+      </tr>";
+    }
+		$saldo=getSaldo();
+		if($saldo>0){
+			$totalSoll+=$saldo;
+			print "<tr>
+				<td valign=top colspan=3>Saldo aus Erfolgsrechnung</td>
+				<td align=right valign=top width=100>".formatPreis($saldo)."</td>
+			</tr>";
+		}
+		print "</table>";
+		?>
+	</td>
+	<td width=2 height=400 bgcolor="#000000" rowspan=2></td>
+  <td width=449 valign=top style="padding:10px 0px 0px 10px">
+	<table border=0 width="100%">
+    <?
+		//Nebenkonten
+		$query=mysql_query("SELECT ne.id,ne.name,sum((bu.betrag*bu.kurs)) FROM $buchhaltung"."_Nebenkonto ne LEFT JOIN $buchhaltung"."_Konto ko ON ne.id = ko.nebenkonto LEFT JOIN $buchhaltung"."_Buchungssaetze bu ON (bu.kt_haben = ko.nr) WHERE ne.typ=2 ".getDateDelimiter("bu.datum","AND","")." GROUP BY ne.id");
+		while(list($nr,$name,$betrag)=mysql_fetch_row($query)) {
+			$query2=mysql_query("SELECT ne.id,ne.name,sum((bu.betrag*bu.kurs)) FROM $buchhaltung"."_Nebenkonto ne LEFT JOIN $buchhaltung"."_Konto ko ON ne.id = ko.nebenkonto LEFT JOIN $buchhaltung"."_Buchungssaetze bu ON (bu.kt_soll = ko.nr) WHERE ne.typ=2 AND ne.id = '$nr' GROUP BY ne.id");
+			$betrag-=@mysql_result($query2,0,2);
+			print "<tr>
+				<td align=left valign=top width=100>".formatPreis($betrag)."</td>
+				<td colspan=2 valign=top align=right width=\"*\"><a href=\"javascript:nebenkonto($nr);\">$name</a></td>
+			</tr>";
+			$totalHaben+=$betrag;
+		}
+		//Buchungssätze
+		$query=mysql_query("SELECT nr,name,waehrung FROM $buchhaltung"."_Konto WHERE typ=2 AND (nebenkonto is NULL OR nebenkonto <1) ORDER BY sort");
+    while(list($konto,$name,$waehrung)=mysql_fetch_row($query)) {
+			$betrag=getHabenBetrag($konto);
+
+      //Namenskonto
+      $query2=mysql_query("SELECT id,name FROM $buchhaltung"."_Namenskonto WHERE position='$konto'");
+      if(mysql_num_rows($query2)>0){
+        list($namenskonto_id,$namenskonto_name)=mysql_fetch_row($query2);
+        print "<tr>
+          <td align=right colspan=4 style=\"font-weight:bold;\">$namenskonto_name</td>
+        </tr>\n";
+        $namenskonto=NULL;
+      }
+
+      $totalHaben+=$betrag;
+      print "<tr>
+      	<td align=left valign=top width=100>".formatPreis($betrag)."</td>";
+			print "<td valign=top align=right><a href=\"javascript:konto('$konto');\">".getKontoFormat($name,$konto)."</a></td>
+				<td width=20 valign=top><input type=checkbox name=\"id$konto\" value=1></td></tr>";
+    }
+		//Saldoberechnung
+		if($saldo<0){
+      $totalSoll+=$saldo;
+      print "<tr>
+				<td align=left valign=top width=100>".formatPreis($saldo)."</td>
+        <td valign=top align=right>Saldo aus Erfolgsrechnung</td>
+      	<td width=20>&nbsp;</td>
+			</tr>";
+    }
+    print "</table>";
+
+    ?>
+  </td>
+</tr>
+<tr>
+	<td height=30 style="padding:10px 10px 0px 0px;" valign=bottom>
+		<table border=0 width="100%">
+		<tr>
+			<td style="font-weight:bold;">Total</td>
+			<td align=right style="text-decoration:underline;font-weight:bold;"><?=formatPreis($totalSoll);?></td>
+		</tr>
+		</table>
+	</td>
+  <td height=30 style="padding:10px 0px 0px 10px" valign=bottom>
+    <table border=0 width="100%" style="padding-left:10px;">
+    <tr>
+      <td style="text-decoration:underline;font-weight:bold;"><?=formatPreis($totalHaben);?></td>
+      <td align=right style="font-weight:bold;">Total</td>
+    </tr>
+    </table>
+  </td>
+</tr>
+</table><br>
+<table border=0>
+<tr>
+	<td>
+		Ausgew&auml;hlte Konten:<br>
+		<SELECT name="action">
+		  <option value="oben">Nach oben</option>
+			<option value="unten">Nach unten</option>
+		</SELECT>
+		<input type=submit name=submit value="OK">
+	</td>
+	<td>&nbsp;</td>
+	<td>
+		Namenskonto:<br>
+		<SELECT name="namenskonto" id="namenskonto">
+			<option value="erstellen">Erstellen</option>
+			<option value="loeschen">L&ouml;schen</option>
+		</SELECT>
+		<input type=button onclick="javascript:namens();" name=submit value="OK">
+	</td>
+</tr>
+</table>
+</form>
+</body>
+</html>

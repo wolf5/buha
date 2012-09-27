@@ -1,0 +1,12 @@
+body {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 10px; background-color: #EEEEEE; color: #000000; margin-left:10px; margin-top:10px; margin-right:20px}
+p,td  {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 10px;}
+.titel {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 18px; font-weight:bold; color: #000000;}
+.titel2 {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 16px; font-weight:bold; color: #000000;}
+a {  font-family: Verdana, Arial, Helvetica, sans-serif; text-decoration: none; color: #000000}
+a:visited {  font-family: Verdana, Arial, Helvetica, sans-serif; text-decoration: none; color: #000000}
+a:hover {  font-family: Verdana, Arial, Helvetica, sans-serif; text-decoration: none ; color: #666666}
+a:active {  font-family: Verdana, Arial, Helvetica, sans-serif; text-decoration: none; color: #000000}
+.csstable { border-style:dotted;border-width:1px;empty-cells:show;table-layout:fixed;border-collapse:collapse; }
+.csstable td { border-style:dotted;border-width:1px;empty-cells:show;table-layout:fixed;border-collapse:collapse; }
+.negativ {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 10px; background-color: #CCCCCC;}
+

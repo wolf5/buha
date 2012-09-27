@@ -1,0 +1,8 @@
+body {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 11px; background-color: #CCCCCC; color: #000000; margin-left:0px; margin-top:0px; margin-right:0px; margin-bottom:0px; }
+p,td  {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 14px;}
+.titel {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 18px; font-weight:bold; color: #000000; text-align:right;}
+.titel2 {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 16px; font-weight:bold; color: #000000;}
+a {  font-family: Verdana, Arial, Helvetica, sans-serif; text-decoration: none; color: #000000}
+a:visited {  font-family: Verdana, Arial, Helvetica, sans-serif; text-decoration: none; color: #000000}
+a:hover {  font-family: Verdana, Arial, Helvetica, sans-serif; text-decoration: none ; color: #666666}
+a:active {  font-family: Verdana, Arial, Helvetica, sans-serif; text-decoration: none; color: #000000}
